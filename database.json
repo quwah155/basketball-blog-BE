@@ -1,0 +1,23 @@
+{
+  "posts": [
+    {
+      "id": 1,
+      "title": "The Evolution of the Three-Point Shot",
+      "summary": "How the game has changed from the paint to the perimeter.",
+      "content": "Basketball has seen a massive shift in strategy over the last decade. The three-point shot, once a gimmick, is now the primary weapon of championship teams...",
+      "category": "Analysis",
+      "image": "https://images.unsplash.com/photo-1546519638-68e109498ffc?auto=format&fit=crop&q=80&w=1000",
+      "date": "2023-10-25"
+    },
+    {
+      "id": 2,
+      "title": "Top 5 Dunks of the Season So Far",
+      "summary": "Reliving the most explosive moments above the rim.",
+      "content": "From windmills to posterizers, this season has delivered some of the best dunks we've seen in years. Let's break down the top 5...",
+      "category": "Highlights",
+      "image": "https://images.unsplash.com/photo-1519861531473-920026393112?auto=format&fit=crop&q=80&w=1000",
+      "date": "2023-11-02"
+    }
+  ],
+  "users": []
+}
