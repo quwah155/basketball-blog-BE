@@ -39,7 +39,7 @@ const postSchema = new mongoose.Schema(
     status: {
       type: String,
       enum: ["DRAFT", "PENDING", "APPROVED", "REJECTED"],
-      default: "APPROVED",
+      default: "PENDING",
     },
     authorId: {
       type: mongoose.Schema.Types.ObjectId,

@@ -1,6 +1,9 @@
 
 node_modules/
 
+# Legacy SQLite/JSON db artifact
+database.json
+
 
 .env
 .env.local

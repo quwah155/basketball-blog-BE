@@ -1,34 +1,28 @@
 const mongoose = require("mongoose");
 
+// Cache the connection promise so Vercel serverless functions reuse it
+// across warm invocations rather than opening a new connection each time.
+let connectionPromise = null;
+
 const connectDB = async () => {
-  try {
-    const cnct = await mongoose.connect(process.env.MONGODB_URI, {});
+  // Already connected — reuse existing connection
+  if (mongoose.connection.readyState === 1) return;
 
-    console.log(`DataBase Connected: ${cnct.connection.host}`);
+  // Connection in progress — await the existing promise
+  if (connectionPromise) return connectionPromise;
 
-    // Handle connection events
-    mongoose.connection.on("connected", () => {
-      console.log("Mongoose connected to DB");
+  connectionPromise = mongoose
+    .connect(process.env.MONGODB_URI)
+    .then((cnct) => {
+      console.log(`✅ MongoDB connected: ${cnct.connection.host}`);
+    })
+    .catch((error) => {
+      connectionPromise = null; // reset so the next call retries
+      console.error("❌ MongoDB connection error:", error.message);
+      throw error;
     });
 
-    mongoose.connection.on("error", (err) => {
-      console.error("Mongoose connection error:", err);
-    });
-
-    mongoose.connection.on("disconnected", () => {
-      console.log("Database disconnected from MongoDB");
-    });
-
-    // Graceful shutdown
-    process.on("SIGINT", async () => {
-      await mongoose.connection.close();
-      console.log("Mongoose connection closed through app termination");
-      process.exit(0);
-    });
-  } catch (error) {
-    console.error("Error connecting to MongoDB:", error.message);
-    throw error;
-  }
+  return connectionPromise;
 };
 
 module.exports = connectDB;

@@ -37,30 +37,18 @@ const userSchema = new mongoose.Schema(
   },
 );
 
-userSchema.methods.toJSON = function () {
-  const userObject = this.toObject();
-  delete userObject.password;
-  delete userObject.emailOtp;
-  delete userObject.emailOtpExpires;
-  return userObject;
-};
-
-// Virtual field for posts
-userSchema.virtual("posts", {
-  ref: "Post",
-  localField: "_id",
-  foreignField: "authorId",
+// Strip sensitive fields and include virtuals in all JSON output
+userSchema.set("toJSON", {
+  virtuals: true,
+  transform: (_doc, ret) => {
+    delete ret.password;
+    delete ret.emailOtp;
+    delete ret.emailOtpExpires;
+    delete ret.otpAttempts;
+    delete ret.otpLockUntil;
+    return ret;
+  },
 });
-
-// Virtual field for comments
-userSchema.virtual("comments", {
-  ref: "Comment",
-  localField: "_id",
-  foreignField: "authorId",
-});
-
-// Include virtuals when converting to JSON
-userSchema.set("toJSON", { virtuals: true });
 userSchema.set("toObject", { virtuals: true });
 
 const User = mongoose.model("User", userSchema);
