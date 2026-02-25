@@ -16,22 +16,24 @@ app.set("trust proxy", 1);
 // Security headers
 app.use(helmet());
 
-// CORS — allow both the configured frontend URL and localhost for dev
+// CORS — allow localhost (dev), explicit FRONTEND_URL, and any *.vercel.app subdomain
 const allowedOrigins = [
   process.env.FRONTEND_URL,
   "http://localhost:5173",
   "http://localhost:4173",
-].filter(Boolean); // remove undefined if FRONTEND_URL is not set
+].filter(Boolean);
 
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Allow requests with no origin (e.g. curl, Postman) and allowed origins
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error(`CORS: origin '${origin}' not allowed`));
-      }
+      // No origin = curl/Postman — allow
+      if (!origin) return callback(null, true);
+      // Explicit allowlist (localhost + FRONTEND_URL)
+      if (allowedOrigins.includes(origin)) return callback(null, true);
+      // Any *.vercel.app subdomain — covers all Vercel preview/prod deployments
+      if (/^https:\/\/[^.]+\.vercel\.app$/.test(origin))
+        return callback(null, true);
+      callback(new Error(`CORS: origin '${origin}' not allowed`));
     },
     credentials: true,
   }),
