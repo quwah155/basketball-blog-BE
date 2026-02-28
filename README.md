@@ -109,17 +109,18 @@ Server starts on `http://localhost:5000` by default (configurable via `PORT` in 
 
 ## 🔐 Environment Variables
 
-| Variable             | Description                                     | Example                                       |
-| -------------------- | ----------------------------------------------- | --------------------------------------------- |
-| `NODE_ENV`           | App environment (`development` or `production`) | `production`                                  |
-| `PORT`               | Port the server listens on (local only)         | `5000`                                        |
-| `FRONTEND_URL`       | Frontend origin for CORS                        | `https://basketball-blog-frontend.vercel.app` |
-| `MONGODB_URI`        | MongoDB Atlas connection string                 | `mongodb+srv://user:pass@...`                 |
-| `JWT_SECRET`         | Secret key for signing/verifying JWTs           | `a-long-random-secret-string`                 |
-| `EMAIL_USER`         | Gmail address for sending verification emails   | `you@gmail.com`                               |
-| `EMAIL_APP_PASSWORD` | Gmail App Password (not your login password)    | `xxxx xxxx xxxx xxxx`                         |
-| `ADMIN_EMAIL`        | Email used to seed the initial admin account    | `admin@yourdomain.com`                        |
-| `ADMIN_PASSWORD`     | Password for the initial admin account          | `YourSecurePassword!`                         |
+| Variable              | Description                                     | Example                                       |
+| --------------------- | ----------------------------------------------- | --------------------------------------------- |
+| `NODE_ENV`            | App environment (`development` or `production`) | `production`                                  |
+| `PORT`                | Port the server listens on (local only)         | `5000`                                        |
+| `FRONTEND_URL`        | Frontend origin for CORS                        | `https://basketball-blog-frontend.vercel.app` |
+| `MONGODB_URI`         | MongoDB Atlas connection string                 | `mongodb+srv://user:pass@...`                 |
+| `JWT_SECRET`          | Secret key for signing/verifying JWTs           | `a-long-random-secret-string`                 |
+| `EMAIL_USER`          | Gmail address for sending verification emails   | `you@gmail.com`                               |
+| `EMAIL_APP_PASSWORD`  | Gmail App Password (not your login password)    | `xxxx xxxx xxxx xxxx`                         |
+| `ADMIN_EMAIL`         | Email used to seed the initial admin account    | `admin@yourdomain.com`                        |
+| `ADMIN_PASSWORD`      | Password for the initial admin account          | `YourSecurePassword!`                         |
+| `BALLDONTLIE_API_KEY` | API Key for the BallDontLie v1 API              | `your_api_key_here`                           |
 
 > **Security:** Never commit your `.env` file. It is listed in `.gitignore`.
 
@@ -136,6 +137,12 @@ Server starts on `http://localhost:5000` by default (configurable via `PORT` in 
 | POST   | `/api/verify-email` | No            | Verify email with OTP, returns JWT       |
 | POST   | `/api/resend-otp`   | No            | Resend OTP to email                      |
 | POST   | `/api/login`        | No            | Login with email + password, returns JWT |
+
+### Live Scores Route — `/api/live-scores`
+
+| Method | Endpoint           | Auth Required | Description                                                                |
+| ------ | ------------------ | ------------- | -------------------------------------------------------------------------- |
+| GET    | `/api/live-scores` | No            | Get live, final, and upcoming NBA games (accepts `?date=YYYY-MM-DD` query) |
 
 ### Post Routes — `/api/posts`
 
