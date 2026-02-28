@@ -2,6 +2,8 @@
 
 A RESTful backend API powering the HoopScoop basketball blog. Built with **Node.js**, **Express**, and **MongoDB (Mongoose)**, with JWT-based authentication, OTP email verification, role-based access control, and a post approval workflow.
 
+**Live API:** https://basketball-blog-be.vercel.app
+
 ---
 
 ## 📋 Table of Contents
@@ -17,6 +19,7 @@ A RESTful backend API powering the HoopScoop basketball blog. Built with **Node.
 - [Admin Setup](#admin-setup)
 - [Utility Scripts](#utility-scripts)
 - [Rate Limiting](#rate-limiting)
+- [Deploying to Vercel](#deploying-to-vercel)
 - [Error Handling](#error-handling)
 
 ---
@@ -32,8 +35,10 @@ A RESTful backend API powering the HoopScoop basketball blog. Built with **Node.
 | Password Hashing | `bcryptjs`                        |
 | Validation       | `zod`                             |
 | Email            | `nodemailer` (Gmail App Password) |
+| Security Headers | `helmet`                          |
 | Rate Limiting    | `express-rate-limit`              |
 | Dev Server       | `nodemon`                         |
+| Deployment       | Vercel (serverless functions)     |
 
 ---
 
@@ -41,33 +46,32 @@ A RESTful backend API powering the HoopScoop basketball blog. Built with **Node.
 
 ```
 basketball-blog-BE/
-├── server.js                   # App entry point, middleware, route mounting
+├── server.js                   # App config, middleware, routes — dual-mode (local + Vercel)
+├── api/
+│   └── index.js                # Vercel serverless entry point (re-exports server.js handler)
+├── vercel.json                 # Vercel deployment config
 ├── .env                        # Secret environment variables (never commit)
 ├── .env.example                # Template for environment variables
-├── src/
-│   ├── config/
-│   │   └── database.js         # MongoDB connection
-│   ├── controllers/
-│   │   ├── authController.js   # register, verifyEmail, resendOtp, login
-│   │   └── postController.js   # CRUD, approve/reject, comments, likes
-│   ├── middleware/
-│   │   └── authMiddleware.js   # JWT verification + role authorization
-│   ├── models/
-│   │   ├── User.js             # User schema (email, password, role, isVerified, OTP fields)
-│   │   ├── Post.js             # Post schema (title, content, status, likes, likedBy)
-│   │   └── Comment.js          # Comment schema (text, postId, authorId)
-│   ├── routes/
-│   │   ├── authRoutes.js       # /api/register, /api/login, /api/verify-email, /api/resend-otp
-│   │   ├── postRoutes.js       # /api/posts — CRUD + admin actions
-│   │   └── admin.js            # /api/admin — user management
-│   └── utils/
-│       ├── sendEmail.js        # Nodemailer email helper
-│       ├── validation.js       # Zod schemas for request validation
-│       └── zodHelpers.js       # Format Zod errors into readable messages
-├── seedAdmin.js                # Create the initial admin account
-├── fixAdminVerified.js         # One-time patch: set isVerified=true on all admins
-├── updateAdminPassword.js      # One-time patch: update admin password
-└── checkPosts.js               # Debugging utility: list all posts in DB
+└── src/
+    ├── config/
+    │   └── database.js         # MongoDB connection with caching for serverless
+    ├── controllers/
+    │   ├── authController.js   # register, verifyEmail, resendOtp, login
+    │   └── postController.js   # CRUD, approve/reject, comments, likes
+    ├── middleware/
+    │   └── authMiddleware.js   # JWT verification + role authorization
+    ├── models/
+    │   ├── User.js             # User schema (email, password, role, isVerified, OTP fields)
+    │   ├── Post.js             # Post schema (title, content, status, likes, likedBy)
+    │   └── Comment.js          # Comment schema (text, postId, authorId)
+    ├── routes/
+    │   ├── authRoutes.js       # /api/register, /api/login, /api/verify-email, /api/resend-otp
+    │   ├── postRoutes.js       # /api/posts — CRUD + admin actions
+    │   └── admin.js            # /api/admin — user management
+    └── utils/
+        ├── sendEmail.js        # Nodemailer email helper
+        ├── validation.js       # Zod schemas for request validation
+        └── zodHelpers.js       # Format Zod errors into readable messages
 ```
 
 ---
@@ -77,52 +81,45 @@ basketball-blog-BE/
 ### Prerequisites
 
 - Node.js v18+ and npm
-- A MongoDB Atlas account (or a local MongoDB instance)
+- A MongoDB Atlas account (or local MongoDB instance)
 - A Gmail account with an [App Password](https://support.google.com/accounts/answer/185833) for sending verification emails
 
 ### Installation
 
 ```bash
-# Clone the repo
 git clone <repo-url>
 cd basketball-blog-BE
-
-# Install dependencies
 npm install
-
-# Copy the environment template and fill in your values
-cp .env.example .env
+cp .env.example .env   # then fill in your values
 ```
 
-### Running the Server
+### Running Locally
 
 ```bash
-# Development (with hot reload via nodemon)
+# Development (hot reload via nodemon)
 npm run dev
 
 # Production
 npm start
 ```
 
-The server starts on `http://localhost:5000` by default (configurable via `PORT` in `.env`).
+Server starts on `http://localhost:5000` by default (configurable via `PORT` in `.env`).
 
 ---
 
 ## 🔐 Environment Variables
 
-Copy `.env.example` to `.env` and fill in all values.
-
-| Variable             | Description                                            | Example                       |
-| -------------------- | ------------------------------------------------------ | ----------------------------- |
-| `NODE_ENV`           | App environment (`development` or `production`)        | `development`                 |
-| `PORT`               | Port the server listens on                             | `5000`                        |
-| `FRONTEND_URL`       | Frontend origin for CORS (must match exactly)          | `http://localhost:5173`       |
-| `MONGODB_URI`        | MongoDB Atlas connection string                        | `mongodb+srv://user:pass@...` |
-| `JWT_SECRET`         | Secret key used to sign/verify JWTs (keep this strong) | `a-long-random-secret-string` |
-| `EMAIL_USER`         | Gmail address used to send verification emails         | `you@gmail.com`               |
-| `EMAIL_APP_PASSWORD` | Gmail App Password (not your normal password)          | `xxxx xxxx xxxx xxxx`         |
-| `ADMIN_EMAIL`        | Email used to seed the initial admin account           | `admin@yourdomain.com`        |
-| `ADMIN_PASSWORD`     | Password for the initial admin account                 | `YourSecurePassword!`         |
+| Variable             | Description                                     | Example                                       |
+| -------------------- | ----------------------------------------------- | --------------------------------------------- |
+| `NODE_ENV`           | App environment (`development` or `production`) | `production`                                  |
+| `PORT`               | Port the server listens on (local only)         | `5000`                                        |
+| `FRONTEND_URL`       | Frontend origin for CORS                        | `https://basketball-blog-frontend.vercel.app` |
+| `MONGODB_URI`        | MongoDB Atlas connection string                 | `mongodb+srv://user:pass@...`                 |
+| `JWT_SECRET`         | Secret key for signing/verifying JWTs           | `a-long-random-secret-string`                 |
+| `EMAIL_USER`         | Gmail address for sending verification emails   | `you@gmail.com`                               |
+| `EMAIL_APP_PASSWORD` | Gmail App Password (not your login password)    | `xxxx xxxx xxxx xxxx`                         |
+| `ADMIN_EMAIL`        | Email used to seed the initial admin account    | `admin@yourdomain.com`                        |
+| `ADMIN_PASSWORD`     | Password for the initial admin account          | `YourSecurePassword!`                         |
 
 > **Security:** Never commit your `.env` file. It is listed in `.gitignore`.
 
@@ -134,6 +131,7 @@ Copy `.env.example` to `.env` and fill in all values.
 
 | Method | Endpoint            | Auth Required | Description                              |
 | ------ | ------------------- | ------------- | ---------------------------------------- |
+| GET    | `/api/health`       | No            | Health check — returns `{status:"OK"}`   |
 | POST   | `/api/register`     | No            | Register new user, sends OTP to email    |
 | POST   | `/api/verify-email` | No            | Verify email with OTP, returns JWT       |
 | POST   | `/api/resend-otp`   | No            | Resend OTP to email                      |
@@ -166,18 +164,18 @@ Copy `.env.example` to `.env` and fill in all values.
 
 ## 🔑 Authentication Flow
 
-1. **Register** — User submits email + password. A hashed 6-digit OTP is stored in the DB and the plaintext OTP is emailed to the user.
-2. **Verify Email** — User submits email + OTP. On success, `isVerified` is set to `true` and a signed JWT is returned. A welcome email is also sent.
-3. **Login** — User submits email + password. Blocked if `isVerified` is `false`. Returns a signed JWT on success.
+1. **Register** — User submits email + password. A hashed 6-digit OTP is stored in the DB and emailed.
+2. **Verify Email** — User submits email + OTP. On success, `isVerified` is set to `true` and a JWT is returned.
+3. **Login** — User submits email + password. Blocked if `isVerified` is `false`. Returns a signed JWT.
 4. **Authenticated Requests** — JWT must be sent in the `Authorization` header as `Bearer <token>`.
 
-**Token payload structure:**
+**Token payload:**
 
 ```json
 {
   "id": "user_mongodb_id",
   "email": "user@example.com",
-  "role": "USER" | "ADMIN",
+  "role": "USER | ADMIN",
   "exp": 1234567890
 }
 ```
@@ -188,14 +186,12 @@ Token expiry: **2 hours**.
 
 ## 🛡 Role-Based Access Control
 
-Two roles exist in the system:
+| Role    | Capabilities                                                                                             |
+| ------- | -------------------------------------------------------------------------------------------------------- |
+| `USER`  | Read approved posts, create posts (PENDING), edit/delete own posts, comment, like                        |
+| `ADMIN` | All USER permissions + view pending posts, approve/reject, manage all users, posts published immediately |
 
-| Role    | Capabilities                                                                                                |
-| ------- | ----------------------------------------------------------------------------------------------------------- |
-| `USER`  | Read approved posts, create posts (goes to PENDING), edit/delete own posts, comment, like                   |
-| `ADMIN` | All USER permissions + view pending posts, approve/reject posts, manage all users, directly published posts |
-
-The `authenticate Token` middleware always **fetches a fresh user document from the DB** on every request, so role changes take effect immediately without requiring a new token.
+The `authenticateToken` middleware always **fetches a fresh user document from the DB** on every request, so role changes take effect immediately without requiring a new token.
 
 ---
 
@@ -213,30 +209,29 @@ Admin reviews in dashboard
   ┌────┴────┐
   ▼         ▼
 APPROVED   REJECTED
-(visible   (hidden from
- publicly)  public feed)
+(public)   (hidden)
 ```
 
 - **ADMIN posts** skip the queue and are immediately `APPROVED`.
-- **USER posts** start as `PENDING` and are only visible to the post author and admins until approved.
-- Editing an approved post by a USER resets its status back to `PENDING`.
+- **USER posts** start as `PENDING` and are only visible to the author and admins until approved.
+- Editing an approved post as a USER resets its status back to `PENDING`.
 
 ---
 
 ## 👤 Admin Setup
 
-The admin account is created by running a seed script — it does **not** go through the normal email verification flow.
+The admin account is created via a seed script — it bypasses normal email verification.
 
 ```bash
-# Make sure your .env has ADMIN_EMAIL and ADMIN_PASSWORD set, then:
+# Ensure ADMIN_EMAIL and ADMIN_PASSWORD are set in .env, then:
 node src/seedAdmin.js
 ```
 
-If an admin account already exists with the same email, the script exits without changes.
+If an admin with the same email already exists, the script exits without changes.
 
-### Fix Existing Unverified Admins
+### Fix Unverified Admins
 
-If an admin was seeded before the `isVerified: true` fix, run:
+If an admin was seeded before the `isVerified: true` fix was applied:
 
 ```bash
 node src/fixAdminVerified.js
@@ -257,7 +252,7 @@ node src/fixAdminVerified.js
 
 ## 🚦 Rate Limiting
 
-Rate limiting is applied per-route inside `authRoutes.js`:
+Applied per-route in `authRoutes.js`:
 
 | Endpoint            | Limit           | Reason                                         |
 | ------------------- | --------------- | ---------------------------------------------- |
@@ -268,18 +263,44 @@ Rate limiting is applied per-route inside `authRoutes.js`:
 
 ---
 
+## 🚀 Deploying to Vercel
+
+This backend supports dual-mode operation:
+
+- **Local dev** — `server.js` calls `app.listen()` when `NODE_ENV !== "production"`
+- **Vercel** — `api/index.js` exports a serverless handler; `app.listen()` is never called
+
+### Steps
+
+1. Push the repo to GitHub.
+2. Import the repo in [vercel.com](https://vercel.com) → set **Root Directory** to `basketball-blog-BE`.
+3. Add all required environment variables in Vercel project settings:
+
+| Variable             | Value                                         |
+| -------------------- | --------------------------------------------- |
+| `NODE_ENV`           | `production`                                  |
+| `FRONTEND_URL`       | `https://basketball-blog-frontend.vercel.app` |
+| `MONGODB_URI`        | Your Atlas connection string                  |
+| `JWT_SECRET`         | Strong random secret                          |
+| `EMAIL_USER`         | Gmail address                                 |
+| `EMAIL_APP_PASSWORD` | Gmail App Password                            |
+
+4. Deploy. Vercel uses `vercel.json` to route all requests to `api/index.js`.
+
+> **CORS Note:** The CORS config allows any `*.vercel.app` origin by default, so preview deployments also work without changes.
+
+---
+
 ## ⚠️ Error Handling
 
-All endpoints return consistent JSON error responses:
+All endpoints return consistent JSON:
 
 ```json
 {
   "message": "Human-readable error description",
-  "errors": { "field": "Specific validation error" }
+  "errors": [{ "field": "fieldName", "message": "Specific validation error" }]
 }
 ```
-
-Common HTTP status codes used:
 
 | Code | Meaning                              |
 | ---- | ------------------------------------ |

@@ -1,14 +1,12 @@
 const mongoose = require("mongoose");
 
-// Cache the connection promise so Vercel serverless functions reuse it
-// across warm invocations rather than opening a new connection each time.
 let connectionPromise = null;
 
 const connectDB = async () => {
-  // Already connected — reuse existing connection
+
   if (mongoose.connection.readyState === 1) return;
 
-  // Connection in progress — await the existing promise
+  
   if (connectionPromise) return connectionPromise;
 
   connectionPromise = mongoose

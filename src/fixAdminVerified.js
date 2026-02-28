@@ -1,8 +1,3 @@
-/**
- * One-time patch script: set isVerified = true for all ADMIN users.
- * Run: node src/fixAdminVerified.js
- * Safe to delete afterwards.
- */
 
 const mongoose = require("mongoose");
 const User = require("./models/User");

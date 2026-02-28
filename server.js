@@ -7,6 +7,7 @@ const connectDB = require("./src/config/database");
 const authRoutes = require("./src/routes/authRoutes");
 const postRoutes = require("./src/routes/postRoutes");
 const adminRoutes = require("./src/routes/admin");
+const liveRoutes = require("./src/routes/liveRoutes");
 
 const app = express();
 
@@ -47,9 +48,10 @@ app.get("/api/health", (req, res) => {
 });
 
 // Routes
-app.use("/api", authRoutes); // /api/login, /api/register, /api/verify-email, /api/resend-otp
+app.use("/api", authRoutes); // /api/login, /api/register, etc.
 app.use("/api/posts", postRoutes); // /api/posts/**
 app.use("/api/admin", adminRoutes); // /api/admin/**
+app.use("/api/live-scores", liveRoutes); // /api/live-scores
 
 // Global error handler
 app.use((err, req, res, next) => {
