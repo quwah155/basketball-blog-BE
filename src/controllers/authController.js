@@ -35,7 +35,7 @@ exports.register = async (req, res) => {
     const user = await User.create({
       email,
       password: hashedPassword,
-      role: "USER", // always default to USER — role cannot be set by client
+      role: "USER",
       isVerified: false,
       emailOtp: hashedOtp,
       emailOtpExpires: Date.now() + 10 * 60 * 1000, // 10 minutes

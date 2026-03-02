@@ -17,7 +17,7 @@ app.set("trust proxy", 1);
 // Security headers
 app.use(helmet());
 
-// CORS — allow localhost (dev), explicit FRONTEND_URL, and any *.vercel.app subdomain
+
 const allowedOrigins = [
   process.env.FRONTEND_URL,
   "http://localhost:5173",
