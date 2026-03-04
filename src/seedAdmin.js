@@ -25,7 +25,7 @@ const seedAdmin = async () => {
       email: adminEmail,
       password: hashedPassword,
       role: "ADMIN",
-      isVerified: true, // Admin bypasses email OTP flow
+      isVerified: true, 
     });
 
     await admin.save();

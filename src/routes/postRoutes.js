@@ -6,7 +6,7 @@ const {
   authorize,
 } = require("../middleware/authMiddleware");
 
-// ── Specific named routes MUST come before /:id ──
+
   
 // Public read — any visitor can browse approved posts
 // authenticateToken is still used so logged-in users get role-aware results (e.g. admins see all statuses)

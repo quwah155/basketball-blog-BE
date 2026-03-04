@@ -1,6 +1,6 @@
 # 🏀 HoopScoop — Backend API
 
-A RESTful backend API powering the HoopScoop basketball blog. Built with **Node.js**, **Express**, and **MongoDB (Mongoose)**, with JWT-based authentication, OTP email verification, role-based access control, and a post approval workflow.
+A RESTful backend API powering the HoopScoop basketball blog. Built with **Node.js**, **Express**, and **MongoDB (Mongoose)**, with JWT-based authentication, OTP email verification, role-based access control, a post approval workflow, and live NBA scores via the BallDontLie API.
 
 **Live API:** https://basketball-blog-be.vercel.app
 
@@ -28,13 +28,14 @@ A RESTful backend API powering the HoopScoop basketball blog. Built with **Node.
 
 | Layer            | Technology                        |
 | ---------------- | --------------------------------- |
-| Runtime          | Node.js                           |
+| Runtime          | Node.js v18+                      |
 | Framework        | Express v5                        |
 | Database         | MongoDB Atlas via Mongoose v8     |
 | Authentication   | JSON Web Tokens (`jsonwebtoken`)  |
 | Password Hashing | `bcryptjs`                        |
 | Validation       | `zod`                             |
 | Email            | `nodemailer` (Gmail App Password) |
+| HTTP Fetch       | `node-fetch@2` (CJS compatible)   |
 | Security Headers | `helmet`                          |
 | Rate Limiting    | `express-rate-limit`              |
 | Dev Server       | `nodemon`                         |
@@ -46,32 +47,34 @@ A RESTful backend API powering the HoopScoop basketball blog. Built with **Node.
 
 ```
 basketball-blog-BE/
-├── server.js                   # App config, middleware, routes — dual-mode (local + Vercel)
+├── server.js                    # App config, middleware, routes — dual-mode (local + Vercel)
 ├── api/
-│   └── index.js                # Vercel serverless entry point (re-exports server.js handler)
-├── vercel.json                 # Vercel deployment config
-├── .env                        # Secret environment variables (never commit)
-├── .env.example                # Template for environment variables
+│   └── index.js                 # Vercel serverless entry point (re-exports server.js handler)
+├── vercel.json                  # Vercel deployment config
+├── .env                         # Secret environment variables (never commit)
+├── .env.example                 # Template for environment variables
 └── src/
     ├── config/
-    │   └── database.js         # MongoDB connection with caching for serverless
+    │   └── database.js          # MongoDB connection with caching for serverless
     ├── controllers/
-    │   ├── authController.js   # register, verifyEmail, resendOtp, login
-    │   └── postController.js   # CRUD, approve/reject, comments, likes
+    │   ├── authController.js    # register, verifyEmail, resendOtp, login
+    │   ├── postController.js    # CRUD, approve/reject, comments, likes
+    │   └── liveControllers.js  # Live NBA scores: fetch, 60s Map cache, transform, group
     ├── middleware/
-    │   └── authMiddleware.js   # JWT verification + role authorization
+    │   └── authMiddleware.js    # JWT verification + role authorization
     ├── models/
-    │   ├── User.js             # User schema (email, password, role, isVerified, OTP fields)
-    │   ├── Post.js             # Post schema (title, content, status, likes, likedBy)
-    │   └── Comment.js          # Comment schema (text, postId, authorId)
+    │   ├── User.js              # User schema (email, password, role, isVerified, OTP fields)
+    │   ├── Post.js              # Post schema (title, content, status, likes, likedBy)
+    │   └── Comment.js           # Comment schema (text, postId, authorId)
     ├── routes/
-    │   ├── authRoutes.js       # /api/register, /api/login, /api/verify-email, /api/resend-otp
-    │   ├── postRoutes.js       # /api/posts — CRUD + admin actions
-    │   └── admin.js            # /api/admin — user management
+    │   ├── authRoutes.js        # /api/register, /api/login, /api/verify-email, /api/resend-otp
+    │   ├── postRoutes.js        # /api/posts — CRUD + admin actions
+    │   ├── admin.js             # /api/admin — user management
+    │   └── liveRoutes.js        # /api/live-scores — public NBA scores endpoint
     └── utils/
-        ├── sendEmail.js        # Nodemailer email helper
-        ├── validation.js       # Zod schemas for request validation
-        └── zodHelpers.js       # Format Zod errors into readable messages
+        ├── sendEmail.js         # Nodemailer email helper
+        ├── validation.js        # Zod schemas for request validation
+        └── zodHelpers.js        # Format Zod errors into readable messages
 ```
 
 ---
@@ -83,6 +86,7 @@ basketball-blog-BE/
 - Node.js v18+ and npm
 - A MongoDB Atlas account (or local MongoDB instance)
 - A Gmail account with an [App Password](https://support.google.com/accounts/answer/185833) for sending verification emails
+- A [BallDontLie API key](https://www.balldontlie.io/) for live NBA scores
 
 ### Installation
 
@@ -109,18 +113,18 @@ Server starts on `http://localhost:5000` by default (configurable via `PORT` in 
 
 ## 🔐 Environment Variables
 
-| Variable              | Description                                     | Example                                       |
-| --------------------- | ----------------------------------------------- | --------------------------------------------- |
-| `NODE_ENV`            | App environment (`development` or `production`) | `production`                                  |
-| `PORT`                | Port the server listens on (local only)         | `5000`                                        |
-| `FRONTEND_URL`        | Frontend origin for CORS                        | `https://basketball-blog-frontend.vercel.app` |
-| `MONGODB_URI`         | MongoDB Atlas connection string                 | `mongodb+srv://user:pass@...`                 |
-| `JWT_SECRET`          | Secret key for signing/verifying JWTs           | `a-long-random-secret-string`                 |
-| `EMAIL_USER`          | Gmail address for sending verification emails   | `you@gmail.com`                               |
-| `EMAIL_APP_PASSWORD`  | Gmail App Password (not your login password)    | `xxxx xxxx xxxx xxxx`                         |
-| `ADMIN_EMAIL`         | Email used to seed the initial admin account    | `admin@yourdomain.com`                        |
-| `ADMIN_PASSWORD`      | Password for the initial admin account          | `YourSecurePassword!`                         |
-| `BALLDONTLIE_API_KEY` | API Key for the BallDontLie v1 API              | `your_api_key_here`                           |
+| Variable              | Description                                     | Example                        |
+| --------------------- | ----------------------------------------------- | ------------------------------ |
+| `NODE_ENV`            | App environment (`development` or `production`) | `production`                   |
+| `PORT`                | Port the server listens on (local only)         | `5000`                         |
+| `FRONTEND_URL`        | Frontend origin for CORS                        | `https://hoopsqoop.vercel.app` |
+| `MONGODB_URI`         | MongoDB Atlas connection string                 | `mongodb+srv://user:pass@...`  |
+| `JWT_SECRET`          | Secret key for signing/verifying JWTs           | `a-long-random-secret-string`  |
+| `EMAIL_USER`          | Gmail address for sending verification emails   | `you@gmail.com`                |
+| `EMAIL_APP_PASSWORD`  | Gmail App Password (not your login password)    | `xxxx xxxx xxxx xxxx`          |
+| `ADMIN_EMAIL`         | Email used to seed the initial admin account    | `admin@yourdomain.com`         |
+| `ADMIN_PASSWORD`      | Password for the initial admin account          | `YourSecurePassword!`          |
+| `BALLDONTLIE_API_KEY` | API key for the BallDontLie v1 NBA API          | `your_balldontlie_key_here`    |
 
 > **Security:** Never commit your `.env` file. It is listed in `.gitignore`.
 
@@ -140,9 +144,28 @@ Server starts on `http://localhost:5000` by default (configurable via `PORT` in 
 
 ### Live Scores Route — `/api/live-scores`
 
-| Method | Endpoint           | Auth Required | Description                                                                |
-| ------ | ------------------ | ------------- | -------------------------------------------------------------------------- |
-| GET    | `/api/live-scores` | No            | Get live, final, and upcoming NBA games (accepts `?date=YYYY-MM-DD` query) |
+| Method | Endpoint           | Auth Required | Description                                                                                                                 |
+| ------ | ------------------ | ------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| GET    | `/api/live-scores` | No            | NBA games grouped into `live`, `final`, `upcoming`. Accepts `?date=YYYY-MM-DD` (defaults to today ET). Cached 60s per date. |
+
+**Response shape:**
+
+```json
+{
+  "date": "2026-02-27",
+  "live":     [{ "id", "homeTeam", "awayTeam", "homeScore", "awayScore", "status", "period", "clock" }],
+  "final":    [...],
+  "upcoming": [{ "...", "kickoff": "7:30 PM ET" }],
+  "lastUpdated": "2026-02-27T12:00:00.000Z",
+  "fromCache": true
+}
+```
+
+**Status detection** (based on confirmed BallDontLie v1 API behavior):
+
+- `period === 0` → `upcoming` (API returns ISO datetime string as `status`)
+- `status` starts with `"Final"` → `final`
+- `period > 0` + not Final → `live`
 
 ### Post Routes — `/api/posts`
 
@@ -281,20 +304,12 @@ This backend supports dual-mode operation:
 
 1. Push the repo to GitHub.
 2. Import the repo in [vercel.com](https://vercel.com) → set **Root Directory** to `basketball-blog-BE`.
-3. Add all required environment variables in Vercel project settings:
-
-| Variable             | Value                                         |
-| -------------------- | --------------------------------------------- |
-| `NODE_ENV`           | `production`                                  |
-| `FRONTEND_URL`       | `https://basketball-blog-frontend.vercel.app` |
-| `MONGODB_URI`        | Your Atlas connection string                  |
-| `JWT_SECRET`         | Strong random secret                          |
-| `EMAIL_USER`         | Gmail address                                 |
-| `EMAIL_APP_PASSWORD` | Gmail App Password                            |
-
+3. Add all required environment variables in Vercel project settings.
 4. Deploy. Vercel uses `vercel.json` to route all requests to `api/index.js`.
 
-> **CORS Note:** The CORS config allows any `*.vercel.app` origin by default, so preview deployments also work without changes.
+> **CORS Note:** The CORS config allows `localhost:5173/4173`, any explicit `FRONTEND_URL`, and any `*.vercel.app` subdomain — so all preview deployments work without changes.
+
+> **Live Scores + Vercel:** The 60-second in-memory Map cache works per warm serverless instance. Cold starts re-fetch once cleanly — well within BallDontLie's free-tier rate limits since the frontend only calls the backend, never the external API directly.
 
 ---
 
@@ -317,3 +332,4 @@ All endpoints return consistent JSON:
 | 404  | Resource not found                   |
 | 429  | Rate limit exceeded                  |
 | 500  | Internal server error                |
+| 502  | Upstream API error (Live Scores)     |

@@ -75,8 +75,7 @@ if (process.env.NODE_ENV !== "production") {
 }
 
 // ── Vercel serverless export ──────────────────────────────────────────────────
-// Vercel calls this for every request. connectDB() is idempotent — Mongoose
-// reuses the existing connection on warm invocations.
+
 module.exports = async (req, res) => {
   await connectDB();
   return app(req, res);
